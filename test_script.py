@@ -6,7 +6,7 @@ from test_problems import PROBLEMS
 #Select what to test
 test_manhattan = False
 test_fval_function = False
-test_alternate = False
+test_alternate = True
 test_anytime_weighted_astar = False
 test_anytime_gbfs = False
 

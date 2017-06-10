@@ -6,6 +6,7 @@
 #   You may not remove any imports.
 #   You may not import or otherwise source any of your own files
 
+import math
 # import os for time functions
 import os
 from search import * #for search engines
@@ -33,7 +34,11 @@ def heur_manhattan_distance(state):
     #When calculating distances, assume there are no obstacles on the grid.
     #You should implement this heuristic function exactly, even if it is tempting to improve it.
     #Your function should return a numeric value; this is the estimate of the distance to the goal.
-    return 0
+    
+    md = 0 #manhattan distance
+    for sb in state.snowballs: 
+        md += abs(sb[0] - state.destination[0]) + abs(sb[1] - state.destination[1])
+    return md
 
 def heur_alternate(state): 
 #IMPLEMENT
@@ -43,7 +48,16 @@ def heur_alternate(state):
     #heur_manhattan_distance has flaws.   
     #Write a heuristic function that improves upon heur_manhattan_distance to estimate distance between the current state and the goal.
     #Your function should return a numeric value for the estimate of the distance to the goal.
-    return 0
+     
+    md = 0 #manhattan distance
+    for sb in state.snowballs:
+        md += abs(sb[0] - state.destination[0]) + abs(sb[1] - state.destination[1]) 
+    
+    # distance of the robot to the target
+    md = md + (abs(state.robot[0] - state.destination[0]) + abs(state.robot[1] - state.destination[1]))
+    # number of obstacles
+    md = md + len(state.obstacles)
+    return md
 
 def fval_function(sN, weight):
 #IMPLEMENT
@@ -62,14 +76,19 @@ def fval_function(sN, weight):
     #The function must return a numeric f-value.
     #The value will determine your state's position on the Frontier list during a 'custom' search.
     #You must initialize your search engine object as a 'custom' search engine if you supply a custom fval function.
-    return 0
+    return sN.gval + (weight * sN.hval)
 
 def anytime_gbfs(initial_state, heur_fn, timebound = 10):
 #IMPLEMENT
     '''Provides an implementation of anytime greedy best-first search, as described in the HW1 handout'''
     '''INPUT: a snowball state that represents the start state and a timebound (number of seconds)'''
     '''OUTPUT: A goal state (if a goal is found), else False''' 
-    return False
+    ct = os.times()[0]
+    se = SearchEngine('best_first')
+    se.init_search(initial_state, snowman_goal_state, heur_fn)    
+    #while et < timebound:
+     # se.search(timebound)
+    return se.search(timebound)
 
 def anytime_weighted_astar(initial_state, heur_fn, weight=1., timebound = 10):
 #IMPLEMENT
