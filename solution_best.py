@@ -82,22 +82,18 @@ def anytime_gbfs(initial_state, heur_fn, timebound = 10):
     '''INPUT: a snowball state that represents the start state and a timebound (number of seconds)'''
     '''OUTPUT: A goal state (if a goal is found), else False''' 
     
-    t = os.times()[0] + timebound
-    se = SearchEngine('best_first', 'full')
-    se.init_search(initial_state, snowman_goal_state, heur_fn)
-    tl = t - os.times()[0]
+    st = os.times()[0]
+    ns = SearchEngine('best_first', 'full')
+    ns.init_search(initial_state, snowman_goal_state, heur_fn)
+    result = ns.search(timebound)
 
-    result = False
-    prev_cost = math.inf
-    while tl > 0:
-        goal = se.search(tl)
-        if goal != False:
-            if goal.gval < prev_cost:
-                result = goal
-                prev_cost = goal.gval
-        else:
-            break
-        tl = t - os.times()[0]
+    # search for optimal solution
+    temp = result
+    while temp and (timebound > 0):
+        temp = ns.search(timebound, (temp.gval - 1, math.inf, math.inf))
+        if temp:
+            result = temp
+        timebound = timebound - (os.times()[0] - st)
 
     return result
 
@@ -105,22 +101,8 @@ def anytime_weighted_astar(initial_state, heur_fn, weight=1., timebound = 10):
 #IMPLEMENT
     '''Provides an implementation of anytime weighted a-star, as described in the HW1 handout'''
     '''INPUT: a snowball state that represents the start state and a timebound (number of seconds)'''
-    '''OUTPUT: A goal state (if a goal is found), else False'''
-
-    t = os.times()[0]
-    se = SearchEngine('custom')
-    lambda_fval = (lambda sN: fval_function(sN, weight))
-    se.init_search(initial_state, snowman_goal_state, heur_fn, lambda_fval)
-    result = se.search(timebound)
-
-    temp = result
-    while temp and (timebound > 0):
-        temp = se.search(timebound, (math.inf, math.inf, temp.gval + heur_fn(temp) - 1))
-        if temp:
-            result = temp
-        timebound -= (os.times()[0] - t)
- 
-    return result
+    '''OUTPUT: A goal state (if a goal is found), else False''' 
+    return False
 
 if __name__ == "__main__":
   #TEST CODE
