@@ -82,18 +82,22 @@ def anytime_gbfs(initial_state, heur_fn, timebound = 10):
     '''INPUT: a snowball state that represents the start state and a timebound (number of seconds)'''
     '''OUTPUT: A goal state (if a goal is found), else False''' 
     
-    st = os.times()[0]
-    ns = SearchEngine('best_first', 'full')
-    ns.init_search(initial_state, snowman_goal_state, heur_fn)
-    result = ns.search(timebound)
+    t = os.times()[0] + timebound
+    se = SearchEngine('best_first', 'full')
+    se.init_search(initial_state, snowman_goal_state, heur_fn)
+    tl = t - os.times()[0]
 
-    # search for optimal solution
-    temp = result
-    while temp and (timebound > 0):
-        temp = ns.search(timebound, (temp.gval - 1, math.inf, math.inf))
-        if temp:
-            result = temp
-        timebound = timebound - (os.times()[0] - st)
+    result = False
+    prev_cost = float('Inf')
+    while tl > 0:
+        goal = se.search(tl)
+        if goal != False:
+            if goal.gval < prev_cost:
+                result = goal
+                prev_cost = goal.gval
+        else:
+            break
+        tl = t - os.times()[0]
 
     return result
 
@@ -101,8 +105,23 @@ def anytime_weighted_astar(initial_state, heur_fn, weight=1., timebound = 10):
 #IMPLEMENT
     '''Provides an implementation of anytime weighted a-star, as described in the HW1 handout'''
     '''INPUT: a snowball state that represents the start state and a timebound (number of seconds)'''
-    '''OUTPUT: A goal state (if a goal is found), else False''' 
-    return False
+    '''OUTPUT: A goal state (if a goal is found), else False'''
+
+    t = os.times()[0] + timebound
+    se = SearchEngine('custom')
+    lambda_fval = (lambda sN: fval_function(sN, weight))
+    se.init_search(initial_state, snowman_goal_state, heur_fn, lambda_fval)
+    tl = t - os.times()[0]
+    
+    result = se.search(tl)
+    temp = result
+    while temp and (tl > 0):
+        temp = se.search(tl, (float('Inf'), float('Inf'), temp.gval + heur_fn(temp) - 1))
+        if temp:
+            result = temp
+        tl = (t - os.times()[0])
+ 
+    return result
 
 if __name__ == "__main__":
   #TEST CODE

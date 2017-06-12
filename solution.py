@@ -6,7 +6,6 @@
 #   You may not remove any imports.
 #   You may not import or otherwise source any of your own files
 
-import math
 # import os for time functions
 import os
 from search import * #for search engines
@@ -40,6 +39,31 @@ def heur_manhattan_distance(state):
         md += abs(sb[0] - state.destination[0]) + abs(sb[1] - state.destination[1])
     return md
 
+def cornered(snowball, width, height, obstacles):
+  '''
+  helper functions to determine if a snowball is cornered.
+  A snowball is cornered when 2 of the 4 directions are blocked or out of bound
+  '''
+  
+  right = snowball[0] + 1
+  sb_right = (right,snowball[1])
+  left = snowball[0] - 1
+  sb_left = (left,snowball[1])
+  down = snowbal[1] + 1
+  sb_down = (snowball[0],down)
+  up = snowball[1] - 1
+  sb_up = (snowball[0],up)  
+  
+  bd = 0 # blocked directions
+  if down is height:
+    db += 1
+  if up < 0:
+    db += 1
+  if right is width:
+    db +=1
+  if left < 0:
+    db +=1
+
 def heur_alternate(state): 
 #IMPLEMENT
     '''a better heuristic'''
@@ -49,12 +73,31 @@ def heur_alternate(state):
     #Write a heuristic function that improves upon heur_manhattan_distance to estimate distance between the current state and the goal.
     #Your function should return a numeric value for the estimate of the distance to the goal.
      
-    md = 0 #manhattan distance
+    # checking walls
+    walls = set()
+    for i in range(state.width):
+      walls.add((i,0))
+      walls.add((i, state.height-1))
+    for j in range(state.height):
+      walls.add((0, j))
+      walls.add((state.width-1, j))
+      
+    # main corners
+    mc = set(((0,0),(state.width-1,0),(0,state.height-1),(state.width-1,state.height-1)))
+      
+    md = 0 
     for sb in state.snowballs:
+      if sb in walls and (state.destination not in walls):
+        md = float('Inf')
+      elif sb in mc and (state.destination not in mc):
+        md = float('Inf')
+      else:
         md += abs(sb[0] - state.destination[0]) + abs(sb[1] - state.destination[1])    
+    
     # distance of the robot to the target
     md = md + (abs(state.robot[0] - state.destination[0]) + abs(state.robot[1] - state.destination[1]))
- 
+    
+    
     return md
 
 def fval_function(sN, weight):
@@ -88,7 +131,7 @@ def anytime_gbfs(initial_state, heur_fn, timebound = 10):
     tl = t - os.times()[0]
 
     result = False
-    prev_cost = math.inf
+    prev_cost = float('Inf')
     while tl > 0:
         goal = se.search(tl)
         if goal != False:
@@ -107,18 +150,19 @@ def anytime_weighted_astar(initial_state, heur_fn, weight=1., timebound = 10):
     '''INPUT: a snowball state that represents the start state and a timebound (number of seconds)'''
     '''OUTPUT: A goal state (if a goal is found), else False'''
 
-    t = os.times()[0]
+    t = os.times()[0] + timebound
     se = SearchEngine('custom')
     lambda_fval = (lambda sN: fval_function(sN, weight))
     se.init_search(initial_state, snowman_goal_state, heur_fn, lambda_fval)
-    result = se.search(timebound)
-
+    tl = t - os.times()[0]
+    
+    result = se.search(tl)
     temp = result
-    while temp and (timebound > 0):
-        temp = se.search(timebound, (math.inf, math.inf, temp.gval + heur_fn(temp) - 1))
+    while temp and (tl > 0):
+        temp = se.search(tl, (float('Inf'), float('Inf'), temp.gval + heur_fn(temp) - 1))
         if temp:
             result = temp
-        timebound -= (os.times()[0] - t)
+        tl = (t - os.times()[0])
  
     return result
 
@@ -154,30 +198,28 @@ if __name__ == "__main__":
   print("Problems that remain unsolved in the set are Problems: {}".format(unsolved))      
   print("*************************************") 
 
-  solved = 0; unsolved = []; counter = 0; percent = 0; timebound = 8; #8 second time limit 
-  print("Running Anytime Weighted A-star")   
+  #solved = 0; unsolved = []; counter = 0; percent = 0; timebound = 8; #8 second time limit 
+  #print("Running Anytime Weighted A-star")   
 
-  for i in range(0, 10):
-    print("*************************************")  
-    print("PROBLEM {}".format(i))
+  #for i in range(0, 10):
+    #print("*************************************")  
+    #print("PROBLEM {}".format(i))
 
-    s0 = PROBLEMS[i] #Problems get harder as i gets bigger
-    weight = 10 
-    final = anytime_weighted_astar(s0, heur_fn=heur_simple, weight=weight, timebound=timebound)
+    #s0 = PROBLEMS[i] #Problems get harder as i gets bigger
+    #weight = 10 
+    #final = anytime_weighted_astar(s0, heur_fn=heur_simple, weight=weight, timebound=timebound)
 
-    if final:
-      final.print_path()   
-      solved += 1 
-    else:
-      unsolved.append(i)
-    counter += 1      
+    #if final:
+      #final.print_path()   
+      #solved += 1 
+    #else:
+      #unsolved.append(i)
+    #counter += 1      
 
-  if counter > 0:  
-    percent = (solved/counter)*100   
+  #if counter > 0:  
+    #percent = (solved/counter)*100   
       
-  print("*************************************")  
-  print("{} of {} problems ({} %) solved in less than {} seconds.".format(solved, counter, percent, timebound))  
-  print("Problems that remain unsolved in the set are Problems: {}".format(unsolved))      
-  print("*************************************") 
-
-
+  #print("*************************************")  
+  #print("{} of {} problems ({} %) solved in less than {} seconds.".format(solved, counter, percent, timebound))  
+  #print("Problems that remain unsolved in the set are Problems: {}".format(unsolved))      
+  #print("*************************************") 
